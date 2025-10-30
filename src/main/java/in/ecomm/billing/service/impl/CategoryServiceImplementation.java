@@ -5,8 +5,10 @@ import in.ecomm.billing.entity.CategoryEntity;
 import in.ecomm.billing.dtos.CategoryRequest;
 import in.ecomm.billing.dtos.CategoryResponse;
 import in.ecomm.billing.service.CategoryService;
+import in.ecomm.billing.service.FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,11 +19,14 @@ import java.util.stream.Collectors;
 public class CategoryServiceImplementation implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final FileUploadService fileUploadService;
 
     @Override
-    public CategoryResponse add(CategoryRequest request) {
+    public CategoryResponse add(CategoryRequest request, MultipartFile file) {
         CategoryEntity newCategory = convertToEntity(request);
+        String imgUrl = fileUploadService.uploadFile(file);
         newCategory = categoryRepository.save(newCategory);
+        newCategory.setImgUrl(imgUrl);
         return convertToResponse(newCategory);
 
     }
@@ -39,6 +44,7 @@ public class CategoryServiceImplementation implements CategoryService {
         CategoryEntity existingEntity = categoryRepository.findAllByCategoryId(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found."));
 
+        fileUploadService.deleteFile(existingEntity.getImgUrl());
         categoryRepository.delete(existingEntity);
     }
 
